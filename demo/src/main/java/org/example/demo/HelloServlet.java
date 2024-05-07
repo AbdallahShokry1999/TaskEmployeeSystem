@@ -31,9 +31,15 @@ public class HelloServlet extends HttpServlet {
 
     // Method to get a single employee by ID
     private void getSingleEmployeeById(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        Long employeeId = Long.parseLong(request.getParameter("id"));
+        Employee employee = employeeService.getEmployeeById(employeeId);
+        if (!isUserAuthenticatedEmployee(request,employeeId)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized access");
+            return;
+        }
         try {
-            Long employeeId = Long.parseLong(request.getParameter("id"));
-            Employee employee = employeeService.getEmployeeById(employeeId);
+
             if (employee != null) {
                 response.setContentType("application/json");
                 response.setCharacterEncoding("UTF-8");
@@ -127,9 +133,31 @@ public class HelloServlet extends HttpServlet {
         }
         return false; // Authorization header missing or invalid
     }
+    private boolean isUserAuthenticatedEmployee(HttpServletRequest request,long id) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Basic ")) {
+            String base64Credentials = authorizationHeader.substring("Basic ".length()).trim();
+            String credentials = new String(Base64.getDecoder().decode(base64Credentials), StandardCharsets.UTF_8);
+            String[] parts = credentials.split(":", 2);
+            String username = parts[0];
+            String password = parts[1];
+            boolean isEqual = username.equals(Long.toString(id));
+            boolean isEqual2 = password.equals(Long.toString(id));
+            boolean u;
+            if (isEqual&&isEqual2){
+                                u = true;
+            }else
+                u=false;
+            return isValidEmployee(username, password,u);
+        }
+        return false; // Authorization header missing or invalid
+    }
 
     // Helper method to validate admin credentials using database check
     private boolean isValidAdmin(String username, String password) {
         return usersService.isValidUser(username, password);
+    }
+    private boolean isValidEmployee(String username, String password, Boolean isUser) {
+        return employeeService.isValidUser(username, password, isUser);
     }
 }
