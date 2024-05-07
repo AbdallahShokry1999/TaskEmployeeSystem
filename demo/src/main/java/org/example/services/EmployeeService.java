@@ -1,6 +1,7 @@
 package org.example.services;
 
 import org.example.model.Employee;
+import org.example.model.Users;
 import org.example.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -73,5 +74,26 @@ public class EmployeeService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean isValidUser(String username, String password, Boolean isUser) {
+        Long number2 = Long.valueOf(password);
+        Long number1 = Long.valueOf(username);
+        if (isUser) {
+            try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                // Hibernate query to check if a user with the given username and password exists.
+                String hql = "FROM Employee WHERE id = :number1 AND id = :number2";
+                Query<Employee> query = session.createQuery(hql, Employee.class);
+                query.setParameter("number1", number1);
+                query.setParameter("number2", number2);
+                // Return true if a user is found, false otherwise.
+                return query.uniqueResult() != null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+
+        } else
+            return false;
     }
 }
